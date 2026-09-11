@@ -22,12 +22,12 @@ void yyerror(const char *msg) { fprintf(stderr, "Error: %s\n", msg); }
  *   - %right → asociatividad derecha:  a ** b ** c se lee  a**(b**c)
  *   - UMINUS es un token ficticio para darle precedencia al menos unario.
  *     Se asigna a una regla con:  | '-' exp %prec UMINUS  { ... }
- *
- * TODO 1 — Agregar: %left '+' '-'       (menor precedencia)
- * TODO 2 — Agregar: %left '*' '/'       (mayor precedencia que + -)
- * TODO 3 — Agregar: %right POW          (mayor precedencia que * /)
- * TODO 4 — Agregar: %right UMINUS       (mayor precedencia de todas)
- */
+ */ /* <-- ACÁ FALTABA CERRAR EL COMENTARIO */
+
+%left '+' '-'      /* Menor precedencia: suma y resta (asociatividad izquierda) */
+%left '*' '/'      /* Mayor precedencia que suma/resta: mult y div */
+%right POW         /* Mayor precedencia que mult/div: potencia (asociatividad derecha) */
+%right UMINUS      /* Mayor precedencia de todas: menos unario (token ficticio) */
 
 %%
 
@@ -41,15 +41,15 @@ linea:
   ;
 
 exp:
-    exp '+' exp           { $$ = $1 + $3; }
+    NUM                   { $$ = $1; }
+  | exp '+' exp           { $$ = $1 + $3; }
   | exp '-' exp           { $$ = $1 - $3; }
   | exp '*' exp           { $$ = $1 * $3; }
   | exp '/' exp           { $$ = $1 / $3; }
-  | exp POW exp           { $$ = (int)pow($1, $3); }
-  | '-' exp %prec UMINUS  { $$ = 0; /* TODO 5 — Reemplazar 0 por la expresión correcta */ }
+  | exp POW exp           { $$ = pow($1, $3); }
   | '(' exp ')'           { $$ = $2; }
-  | NUM                   { $$ = $1; }
-  ;
+  | '-' exp %prec UMINUS  { $$ = -$2; }
+;
 
 %%
 
