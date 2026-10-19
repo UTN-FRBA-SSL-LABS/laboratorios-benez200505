@@ -277,7 +277,7 @@ Los tests de `IsEmpty` ya están activos en `StringTest.c`. Corré `make test` y
 
 **P1** — `IsEmpty` podría haberse escrito también como `return s[0] == '\0'`. ¿Son equivalentes? ¿Por qué?
 
-> R:
+> R:Sí, son equivalentes. En C, la notación de arreglos s[0] es azúcar sintáctico para la aritmética de punteros *(s + 0). Como sumar 0 no altera la dirección de memoria, *(s + 0) es exactamente lo mismo que *s. Ambas expresiones desreferencian el puntero y acceden al primer carácter de la cadena.
 
 ---
 
@@ -328,14 +328,14 @@ make test
 
 **P2** — ¿Qué hace `s + 1`? ¿Por qué avanza al siguiente carácter y no al siguiente byte?
 
-> R:
+> R:s + 1 realiza aritmética de punteros. En C, sumarle 1 a un puntero lo hace avanzar tantos bytes como el tamaño de su tipo de dato. Como s es de tipo char * (o const char *) y en C el sizeof(char) es exactamente 1 byte, avanzar al siguiente carácter equivale también a avanzar 1 byte en memoria.
 
 **P3** — Si llamaras a `GetLength(NULL)`, ¿qué pasaría? ¿Por qué las precondiciones del contrato dicen `s != NULL`?
 
-> R:
+> R:Si le pasás NULL, el programa va a fallar ("Segmentation fault" o violación de segmento) y se va a cerrar. Esto pasa porque GetLength llama a IsEmpty, la cual intenta desreferenciar el puntero (*s). Tratar de leer el valor al que apunta NULL es un acceso a memoria inválido, por eso la precondición prohíbe pasar un puntero nulo.
 
 ```
-GETLENGTH_PASA=
+GETLENGTH_PASA=SI
 ```
 _(escribí SI cuando todos los tests de GetLength pasen)_
 
@@ -367,7 +367,7 @@ El `while` termina cuando alguna de las dos cadenas llega a `'\0'`. Después dev
 
 **P4** — ¿Qué dos casos están mal cubiertos por `return 1`? Describí un ejemplo para cada uno.
 
-> R:
+> R:El return 1 final asume ciegamente que las cadenas son iguales solo porque el ciclo terminó, pero ignora que el ciclo corta en cuanto cualquiera de las dos cadenas llega a su fin. Falla cuando tienen distinta longitud pero comparten el mismo inicio (prefijo). Los dos casos son: Cuando s1 es más corta que s2: Por ejemplo, si s1 = "sol" y s2 = "soldado". El while termina porque s1 llega a \0, y devuelve 1 afirmando que son iguales cuando no lo son. Cuando s2 es más corta que s1: Por ejemplo, si s1 = "caramelo" y s2 = "cara". El while termina porque s2 llega a \0, y también devuelve 1 de forma incorrecta.
 
 #### Corrección
 
@@ -384,7 +384,7 @@ make test
 ```
 
 ```
-AREEQUAL_PASA=
+AREEQUAL_PASA=SI
 ```
 _(escribí SI cuando todos los tests de AreEqual pasen)_
 
@@ -414,7 +414,7 @@ int AreDecimalDigits(const char *s) {
 
 **P5** — ¿Por qué la cadena vacía no debería considerarse un conjunto de dígitos decimales? Pensalo desde la especificación matemática.
 
-> R:
+> R:Porque matemáticamente, un conjunto de dígitos requiere la existencia de al menos un elemento que pertenezca al rango numérico. La cadena vacía tiene cero elementos, por lo que carece de los caracteres mínimos para ser considerada un conjunto de dígitos válido.
 
 #### Corrección
 
@@ -425,7 +425,7 @@ make test
 ```
 
 ```
-AREDECIMALDIGITS_PASA=
+AREDECIMALDIGITS_PASA=SI
 ```
 _(escribí SI cuando todos los tests de AreDecimalDigits pasen)_
 
@@ -452,7 +452,7 @@ make test
 ```
 
 ```
-CONTAINS_PASA=
+CONTAINS_PASA=SI
 ```
 _(escribí SI cuando todos los tests de Contains pasen)_
 
@@ -467,7 +467,7 @@ Antes de implementar, discutí con tu equipo:
 
 **P6** — Conclusión de la discusión:
 
-> R:
+> R:Es correcto tenerla en un módulo separado Conversion. La biblioteca String debe tener alta cohesión y encargarse exclusivamente de operaciones propias del manejo de texto (longitud, comparaciones, búsquedas). La función ToInteger cambia el dominio de los datos (transforma texto en un número entero matemático), por lo que pertenece a otra categoría. Separarlos respeta el principio de responsabilidad única (de hecho, C estándar hace lo mismo: atoi pertenece a <stdlib.h>, no a <string.h>).
 
 ---
 
@@ -494,7 +494,7 @@ int ToInteger(const char *s) {
 
 **P7** — El loop acumula correctamente el valor en `resultado`. ¿Qué está mal en el `return`?
 
-> R:
+> R:Devuelve únicamente la variable signo (que vale 1 o -1), descartando el número que se calculó dentro del bucle. Para devolver el valor correcto con su signo correspondiente, la línea debe ser return resultado * signo;.
 
 #### Corrección
 
@@ -506,10 +506,10 @@ make test
 
 **P8** — La expresión `*s - '0'` convierte un carácter dígito al entero correspondiente. ¿Por qué funciona? ¿Qué devuelve `'3' - '0'`?
 
-> R:
+> R:Funciona porque en C (bajo la tabla ASCII), los caracteres numéricos del '0' al '9' tienen valores enteros consecutivos, yendo del 48 al 57. Al restarle el valor base de '0' (48) a cualquier otro dígito en formato carácter, se obtiene la distancia exacta, que equivale a su valor entero real. La expresión '3' - '0' (que internamente es 51 - 48) devuelve el entero 3.
 
 ```
-TOINTEGER_PASA=
+TOINTEGER_PASA=SI
 ```
 _(escribí SI cuando todos los tests de ToInteger pasen)_
 
@@ -562,7 +562,7 @@ foo
 
 **P9** — ¿Por qué `(void)argc` suprime un warning? ¿Cuándo sería necesario usar `argc`?
 
-> R:
+> R:La instrucción (void)argc le avisa explícitamente al compilador que esa variable no se va a usar en el código, suprimiendo así la advertencia (warning) de "variable sin usar" durante la compilación. Sería necesario usar argc cuando necesitás saber o validar la cantidad exacta de argumentos recibidos antes de procesarlos (por ejemplo, haciendo if (argc < 2) para obligar al usuario a ingresar al menos un parámetro) o si prefirieras iterar el arreglo argv usando un ciclo for numérico tradicional en lugar de comprobar el puntero NULL.
 
 ---
 
@@ -589,7 +589,7 @@ Salida esperada:
 ```
 
 ```
-LONGITUDES_PASA=
+LONGITUDES_PASA=SI
 ```
 _(SI o NO)_
 
@@ -616,7 +616,7 @@ make mayorlongitud
 ```
 
 ```
-MAYORLONGITUD_PASA=
+MAYORLONGITUD_PASA=SI
 ```
 _(SI o NO)_
 
@@ -635,7 +635,7 @@ make todosiguales
 ```
 
 ```
-TODOSIGUALES_PASA=
+TODOSIGUALES_PASA=SI
 ```
 _(SI o NO)_
 
@@ -652,7 +652,7 @@ make suma
 ```
 
 ```
-SUMA_PASA=
+SUMA_PASA=SI
 ```
 _(SI o NO)_
 
@@ -662,7 +662,7 @@ _(SI o NO)_
 
 **P10** — `GetLength` es recursiva pero en C una llamada recursiva consume un stack frame. Si llamaras `GetLength` con un string de 1.000.000 de caracteres, ¿qué pasaría? ¿Cómo lo resolverías?
 
-> R:
+> R:Se produciría un "Stack Overflow" (desbordamiento de pila) y el programa abortaría con un Segmentation Fault. Esto ocurre porque cada carácter añade un nuevo frame a la pila de llamadas, excediendo la memoria límite asignada por el sistema operativo. Se resuelve cambiando la función a una implementación iterativa (con un while o for), que consume espacio constante $O(1)$ independientemente del largo del string.
 
 **P11** — En la Parte III, todos los programas usan `char **arg` para iterar en vez de un índice entero. ¿Qué ventaja tiene este estilo? ¿Cuándo sería preferible usar el índice?
 
